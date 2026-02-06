@@ -13,18 +13,3 @@
 - **Backend**: Node.js, Express
 - **Database**: PostgreSQL / MongoDB
 
-## Орнату:
-1. Репозиторийді клонирлеу:
-   ```bash
-   git clone <repository_url>
-Frontend және Backend бөліктері үшін қажетті пакеттерді орнату:
-
-
-cd frontend
-npm install
-cd ../backend
-npm install
-Пайдалану:
-Серверді іске қосу:
-npm start
- 
