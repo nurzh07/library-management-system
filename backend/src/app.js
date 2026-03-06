@@ -15,6 +15,8 @@ const bookRoutes = require('./routes/books');
 const authorRoutes = require('./routes/authors');
 const userRoutes = require('./routes/users');
 const borrowingRoutes = require('./routes/borrowings');
+const categoryRoutes = require('./routes/categories');
+const adminRoutes = require('./routes/admin');
 
 const app = express();
 
@@ -50,6 +52,8 @@ app.use('/api/books', bookRoutes);
 app.use('/api/authors', authorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/borrowings', borrowingRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling middleware (must be last)
 app.use(errorHandler);

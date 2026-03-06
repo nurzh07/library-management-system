@@ -10,7 +10,8 @@
     "test:watch": "jest --watch",
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
-    "seed": "sequelize-cli db:seed:all"
+    "seed": "sequelize-cli db:seed:all",
+    "seed:admin": "node src/scripts/create-admin.js"
   },
   "keywords": ["library", "management", "api"],
   "author": "",

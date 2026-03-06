@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   Container,
   Typography,
@@ -10,15 +10,26 @@ import {
   TextField,
   Box,
   Pagination,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Snackbar,
+  Alert,
 } from '@mui/material';
 import api from '../services/api';
+import { AuthContext } from '../context/AuthContext';
 
 const Books = () => {
+  const { user } = useContext(AuthContext);
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [detailBook, setDetailBook] = useState(null);
+  const [borrowing, setBorrowing] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     fetchBooks();
@@ -36,6 +47,29 @@ const Books = () => {
       console.error('Error fetching books:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBorrow = async (book) => {
+    if (!user) {
+      setSnackbar({ open: true, message: 'Кітап алу үшін кіріңіз', severity: 'warning' });
+      return;
+    }
+    if (book.availableCopies < 1) {
+      setSnackbar({ open: true, message: 'Кітап қолда жоқ', severity: 'error' });
+      return;
+    }
+    try {
+      setBorrowing(true);
+      await api.post('/borrowings', { bookId: book.id });
+      setSnackbar({ open: true, message: 'Кітап сәтті алынды', severity: 'success' });
+      setDetailBook(null);
+      fetchBooks();
+    } catch (error) {
+      const msg = error.response?.data?.message || 'Қате';
+      setSnackbar({ open: true, message: msg, severity: 'error' });
+    } finally {
+      setBorrowing(false);
     }
   };
 
@@ -81,7 +115,20 @@ const Books = () => {
                     </Typography>
                   </CardContent>
                   <CardActions>
-                    <Button size="small">Толығырақ</Button>
+                    <Button size="small" onClick={() => setDetailBook(book)}>
+                      Толығырақ
+                    </Button>
+                    {user && book.availableCopies > 0 && (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        color="primary"
+                        onClick={() => handleBorrow(book)}
+                        disabled={borrowing}
+                      >
+                        Кітап алу
+                      </Button>
+                    )}
                   </CardActions>
                 </Card>
               </Grid>
@@ -98,6 +145,60 @@ const Books = () => {
           )}
         </>
       )}
+
+      <Dialog open={!!detailBook} onClose={() => setDetailBook(null)} maxWidth="sm" fullWidth>
+        <DialogTitle>{detailBook?.title}</DialogTitle>
+        <DialogContent>
+          {detailBook && (
+            <Box sx={{ pt: 1 }}>
+              <Typography variant="body2" color="text.secondary">
+                ISBN: {detailBook.isbn}
+              </Typography>
+              {detailBook.authors && detailBook.authors.length > 0 && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Авторлар: {detailBook.authors.map(a => `${a.firstName} ${a.lastName}`).join(', ')}
+                </Typography>
+              )}
+              {detailBook.description && (
+                <Typography variant="body2" sx={{ mt: 2 }}>
+                  {detailBook.description}
+                </Typography>
+              )}
+              {detailBook.publicationYear && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Шығарылым жылы: {detailBook.publicationYear}
+                </Typography>
+              )}
+              {detailBook.publisher && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                  Баспа: {detailBook.publisher}
+                </Typography>
+              )}
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Қолда бар: {detailBook.availableCopies} / {detailBook.totalCopies}
+              </Typography>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDetailBook(null)}>Жабу</Button>
+          {detailBook && user && detailBook.availableCopies > 0 && (
+            <Button
+              variant="contained"
+              onClick={() => handleBorrow(detailBook)}
+              disabled={borrowing}
+            >
+              Кітап алу
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar open={snackbar.open} autoHideDuration={4000} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 };
