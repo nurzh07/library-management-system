@@ -10,7 +10,7 @@ Backend, database, API, authentication
 Frontend, UI/UX, responsive pages
 
 Бакдаулет:
-DevOps, documentation, testing, GitHub, Docker, CI/CD
+DevOps, documentation, testing, GitHub, Docker, CI/CD.............
 
 ## 📋 Жоба сипаттамасы
 
