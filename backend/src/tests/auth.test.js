@@ -4,8 +4,7 @@ const { User } = require('../models');
 
 describe('Authentication API', () => {
   beforeEach(async () => {
-    // Clean up before each test
-    await User.destroy({ where: {}, truncate: true });
+    await User.destroy({ where: {}, truncate: true, cascade: true });
   });
 
   describe('POST /api/auth/register', () => {

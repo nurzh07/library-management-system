@@ -37,7 +37,7 @@ createdb lms_db
 cp .env.example .env
 ```
 
-`.env` файлын өзгерту:
+`.env` файлын өзгерту (міндетті: **JWT_SECRET**; жоқ болса production-да логин 500 береді):
 
 ```env
 DB_HOST=localhost
@@ -45,8 +45,15 @@ DB_PORT=5432
 DB_NAME=lms_db
 DB_USER=postgres
 DB_PASSWORD=your_password
-JWT_SECRET=your-secret-key
+JWT_SECRET=your-secret-key-at-least-32-chars
+JWT_EXPIRES_IN=7d
+# Vite 3001 немесе 5173 — үтірмен екеуін де жазуға болады
+CORS_ORIGIN=http://localhost:3001,http://localhost:5173
 ```
+
+**Frontend әзірлеу:** `npm run dev` кезінде сұраулар `/api` арқылы Vite проксиге барады (CORS қажет емес). Backend `http://localhost:3000` жүріп тұруы керек.
+
+**Docker:** `docker compose` ішінде `DB_SYNC_ON_START=true` бірінші іске қосқанда кестелерді жасайды.
 
 ### 4. Backend іске қосу
 

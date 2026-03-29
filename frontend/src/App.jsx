@@ -108,7 +108,12 @@ function App() {
               color: 'rgba(248,250,252,0.96)',
             }}
           >
-            <Router>
+            <Router
+              future={{
+                v7_startTransition: true,
+                v7_relativeSplatPath: true,
+              }}
+            >
               <Navbar />
               <Box component="main" sx={{ py: 4 }}>
                 <Routes>

@@ -10,7 +10,7 @@ Backend, database, API, authentication
 Frontend, UI/UX, responsive pages
 
 Бакдаулет:
-DevOps, documentation, testing, GitHub, Docker, CI/CD.............
+DevOps, documentation, testing, GitHub, Docker, CI/CD
 
 ## 📋 Жоба сипаттамасы
 
@@ -147,10 +147,21 @@ LMS/
 
 Толық нұсқаулық: [docs/setup.md](docs/setup.md)
 
-### Жылдам бастау (Docker арқылы):
+### Жылдам бастау (Docker арқылы — Postgres + Backend + Frontend):
 ```bash
-docker-compose up -d
+docker compose up -d --build
 ```
+- Frontend: http://localhost:3001  
+- Backend API: http://localhost:3000/api  
+- Docker backend: `DB_SYNC_ON_START` кестелерді бірінші рет жасайды; `JWT_SECRET` орта айнымалысымен өзгертуге болады.  
+- Prometheus + Grafana (қосымша профиль):
+```bash
+docker compose --profile monitoring up -d
+```
+- Prometheus: http://localhost:9090 · Grafana: http://localhost:3002 (`admin` / `admin`)
+
+### Бұлттық деплой
+Нұсқаулық: [docs/deploy.md](docs/deploy.md)
 
 ## 📝 API Құжаттамасы
 
@@ -170,9 +181,10 @@ npm test
 
 ## 📈 Мониторинг
 
-- Логи: Winston арқылы
-- Метрикалар: Prometheus + Grafana
-- Жүктемелік тесттер: k6
+- Логи: Winston + Morgan
+- Метрикалар: `GET /metrics` (Prometheus форматы, `prom-client`)
+- Docker профилі: `docker compose --profile monitoring up -d` (Prometheus + Grafana, `monitoring/prometheus.yml`)
+- Жүктемелік тест: [load-tests/k6/smoke.js](load-tests/k6/smoke.js) — `k6 run load-tests/k6/smoke.js` (алдымен [k6 орнату](https://k6.io/docs/get-started/installation/))
 
 ## 🔒 Қауіпсіздік
 
@@ -202,7 +214,7 @@ npm run dev
 # Frontend дамыту
 cd frontend
 npm install
-npm start
+npm run dev
 ```
 
 ## 📄 Лицензия

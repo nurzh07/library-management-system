@@ -5,6 +5,26 @@ const morgan = require('morgan');
 const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
+const isProd = process.env.NODE_ENV === 'production';
+const isTest = process.env.NODE_ENV === 'test';
+
+if (
+  !isTest &&
+  !isProd &&
+  (!process.env.JWT_SECRET || !String(process.env.JWT_SECRET).trim())
+) {
+  process.env.JWT_SECRET = 'lms-local-dev-jwt-secret-not-for-production';
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[LMS] JWT_SECRET .env-та жоқ — әзірлеу үшін уақытша кілт қойылды. Production үшін міндетті өз кілтіңізді жазыңыз.'
+  );
+} else if (!isTest && isProd && (!process.env.JWT_SECRET || !String(process.env.JWT_SECRET).trim())) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[LMS] JWT_SECRET жоқ — production-да логин жұмыс істемейді. Орта айнымалысын қойыңыз.'
+  );
+}
+
 const { sequelize } = require('./config/database');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
@@ -17,15 +37,27 @@ const userRoutes = require('./routes/users');
 const borrowingRoutes = require('./routes/borrowings');
 const categoryRoutes = require('./routes/categories');
 const adminRoutes = require('./routes/admin');
+const { router: metricsRouter } = require('./routes/metrics');
 
 const app = express();
 
 // Security middleware
 app.use(helmet());
-app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3001',
-  credentials: true
-}));
+const corsOrigins = (process.env.CORS_ORIGIN ||
+  'http://localhost:3001,http://localhost:5173')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (corsOrigins.includes(origin)) return callback(null, true);
+      callback(null, false);
+    },
+    credentials: true
+  })
+);
 
 // Rate limiting
 const limiter = rateLimit({
@@ -46,6 +78,9 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Prometheus metrics (мониторинг; rate limit қолданылмайды)
+app.use('/metrics', metricsRouter);
+
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
@@ -59,25 +94,33 @@ app.use('/api/admin', adminRoutes);
 app.use(errorHandler);
 
 // Database connection
-sequelize.authenticate()
+sequelize
+  .authenticate()
   .then(() => {
     logger.info('Database connection established successfully.');
-    
-    // Sync database (use with caution in production)
-    if (process.env.NODE_ENV !== 'production') {
-      sequelize.sync({ alter: true }).then(() => {
-        logger.info('Database synced successfully.');
-      });
+
+    const syncOnStart =
+      process.env.NODE_ENV !== 'production' ||
+      process.env.DB_SYNC_ON_START === 'true';
+    if (!syncOnStart) {
+      logger.info('Database sync skipped (production). DB_SYNC_ON_START=true to create tables once.');
+      return;
     }
+    const alter = process.env.NODE_ENV !== 'production';
+    return sequelize.sync({ alter }).then(() => {
+      logger.info('Database synced successfully.');
+    });
   })
-  .catch(err => {
+  .catch((err) => {
     logger.error('Unable to connect to the database:', err);
   });
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-  logger.info(`Server is running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    logger.info(`Server is running on port ${PORT}`);
+  });
+}
 
 module.exports = app;

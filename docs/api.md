@@ -5,6 +5,13 @@
 http://localhost:3000/api
 ```
 
+### Жүйелік эндпоинттер (API префиксіз)
+
+| Әдіс | Жол | Сипаттама |
+|------|-----|-----------|
+| GET | `http://localhost:3000/health` | Қызметтің тірі екенін тексеру |
+| GET | `http://localhost:3000/metrics` | Prometheus метрикалары (мониторинг) |
+
 ## Аутентификация
 
 Көптеген эндпоинттер JWT токенді талап етеді. Токенді `Authorization` заголовіне қосыңыз:
@@ -189,6 +196,20 @@ POST /borrowings
 ```
 POST /borrowings/:id/return
 ```
+
+### Категориялар (қоғамдық)
+
+```
+GET /categories
+```
+
+### Админ (JWT + рөл `admin`)
+
+```
+GET /admin/stats
+```
+
+Жауап мысалы: `users`, `books`, `authors`, `borrowings`, `activeBorrowings` сандары.
 
 ## Жауап форматы
 

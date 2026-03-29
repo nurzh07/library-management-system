@@ -8,6 +8,14 @@ const errorHandler = (err, req, res, next) => {
     method: req.method
   });
 
+  if (err.code === 'JWT_SECRET_MISSING' || (err.message && err.message.includes('secretOrPrivateKey'))) {
+    return res.status(500).json({
+      success: false,
+      message:
+        'Сервер бапталмаған: .env ішінде JWT_SECRET жоқ. backend/.env ашып, JWT_SECRET=кез-келген-ұзын-кілт қосыңыз да backend-ті қайта іске қосыңыз.'
+    });
+  }
+
   // Sequelize validation errors
   if (err.name === 'SequelizeValidationError') {
     return res.status(400).json({

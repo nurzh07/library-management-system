@@ -5,9 +5,16 @@ const logger = require('../utils/logger');
 
 // Generate JWT token
 const generateToken = (userId) => {
+  const secret = process.env.JWT_SECRET;
+  if (!secret || !String(secret).trim()) {
+    const err = new Error('JWT_SECRET орнатылмаған: backend/.env файлына JWT_SECRET=... қосыңыз');
+    err.statusCode = 500;
+    err.code = 'JWT_SECRET_MISSING';
+    throw err;
+  }
   return jwt.sign(
     { userId },
-    process.env.JWT_SECRET,
+    secret,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
   );
 };
