@@ -35,7 +35,7 @@ services:
       # Бірінші іске қосқанда кестелерді жасау (production-да alter=false)
       DB_SYNC_ON_START: "true"
     ports:
-      - "3000:3000"
+      - "3002:3000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -80,6 +80,7 @@ services:
       GF_USERS_DEFAULT_THEME: dark
     volumes:
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
     ports:
       - "3002:3000"
     depends_on:
@@ -88,3 +89,4 @@ services:
 
 volumes:
   postgres_data:
+  grafana_data:

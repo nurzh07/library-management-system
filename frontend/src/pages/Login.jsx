@@ -10,12 +10,14 @@ import {
   Alert,
 } from '@mui/material';
 import { AuthContext } from '../context/AuthContext';
+import { useNotification } from '../context/NotificationContext';
 
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const { login } = useContext(AuthContext);
+  const { showSuccess, showError: showNotificationError } = useNotification();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
@@ -24,9 +26,12 @@ const Login = () => {
 
     try {
       await login(email, password);
+      showSuccess('Сәтті кірдіңіз! Қош келдіңіз 👋');
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Кіру кезінде қате пайда болды');
+      const errorMsg = err.response?.data?.message || 'Кіру кезінде қате пайда болды';
+      setError(errorMsg);
+      showNotificationError(errorMsg);
     }
   };
 
@@ -46,6 +51,7 @@ const Login = () => {
             fullWidth
             label="Email"
             type="email"
+            name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             margin="normal"
@@ -55,6 +61,7 @@ const Login = () => {
             fullWidth
             label="Құпиясөз"
             type="password"
+            name="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             margin="normal"

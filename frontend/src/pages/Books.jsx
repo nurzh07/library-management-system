@@ -16,6 +16,9 @@ import {
   DialogActions,
   Snackbar,
   Alert,
+  Skeleton,
+  Chip,
+  CardMedia,
 } from '@mui/material';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
@@ -82,6 +85,7 @@ const Books = () => {
         <TextField
           fullWidth
           label="Іздеу"
+          data-testid="books-search"
           value={search}
           onChange={(e) => {
             setSearch(e.target.value);
@@ -91,13 +95,26 @@ const Books = () => {
         />
       </Box>
       {loading ? (
-        <Typography>Жүктелуде...</Typography>
+        <Grid container spacing={3}>
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Grid item xs={12} sm={6} md={4} key={i}>
+              <Card>
+                <Skeleton variant="rectangular" height={140} />
+                <CardContent>
+                  <Skeleton variant="text" height={32} width="80%" />
+                  <Skeleton variant="text" height={20} width="60%" />
+                  <Skeleton variant="text" height={20} width="40%" />
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
       ) : (
         <>
-          <Grid container spacing={3}>
+          <Grid container spacing={3} data-testid="books-grid">
             {books.map((book) => (
               <Grid item xs={12} sm={6} md={4} key={book.id}>
-                <Card>
+                <Card data-testid="book-card">
                   <CardContent>
                     <Typography variant="h6" component="h2">
                       {book.title}
@@ -137,6 +154,7 @@ const Books = () => {
           {totalPages > 1 && (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
               <Pagination
+                data-testid="books-pagination"
                 count={totalPages}
                 page={page}
                 onChange={(e, value) => setPage(value)}

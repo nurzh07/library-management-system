@@ -1,0 +1,156 @@
+{
+  "info": {
+    "name": "LMS Library API",
+    "description": "Кітапхана АҚЖ API коллекциясы",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Аутентификация",
+      "item": [
+        {
+          "name": "Тіркелу",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\",\n  \"firstName\": \"Айбек\",\n  \"lastName\": \"Қуаныш\",\n  \"phone\": \"+77001234567\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Кіру",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@library.kz\",\n  \"password\": \"Admin123!\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Профиль",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/auth/profile"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Кітаптар",
+      "item": [
+        {
+          "name": "Барлық кітаптар",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/books?page=1&limit=10&search=Абай"
+          }
+        },
+        {
+          "name": "Кітап қосу (Админ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/books",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Жаңа кітап\",\n  \"isbn\": \"978-601-1234-01-1\",\n  \"totalCopies\": 10,\n  \"availableCopies\": 10,\n  \"categoryId\": 1,\n  \"authorIds\": [1, 2]\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Авторлар",
+      "item": [
+        {
+          "name": "Барлық авторлар",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/api/authors?page=1&limit=10"
+          }
+        },
+        {
+          "name": "Автор қосу (Админ)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": "{{baseUrl}}/api/authors",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Мағжан\",\n  \"lastName\": \"Жұмабаев\",\n  \"nationality\": \"Қазақ\",\n  \"biography\": \"Қазақ ақыны, жазушы\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Кітап алу/қайтару",
+      "item": [
+        {
+          "name": "Кітап алу",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": "{{baseUrl}}/api/borrowings",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bookId\": 1\n}"
+            }
+          }
+        },
+        {
+          "name": "Менің кітаптарым",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/borrowings/my"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Админ",
+      "item": [
+        {
+          "name": "Статистика",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/stats"
+          }
+        },
+        {
+          "name": "Барлық қолданушылар",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/users"
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" }
+  ]
+}

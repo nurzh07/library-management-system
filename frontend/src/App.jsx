@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, StyledEngineProvider } from '@mui/material/
 import CssBaseline from '@mui/material/CssBaseline';
 import Box from '@mui/material/Box';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import PrivateRoute from './components/PrivateRoute';
 import Navbar from './components/Navbar';
 import Home from './pages/Home';
@@ -100,23 +101,24 @@ function App() {
       <ThemeProvider theme={theme}>
         <CssBaseline />
         <AuthProvider>
-          <Box
-            sx={{
-              minHeight: '100vh',
-              background:
-                'radial-gradient(circle at top left, #1d4ed8 0, transparent 55%), radial-gradient(circle at bottom right, #f97316 0, transparent 55%), #020617',
-              color: 'rgba(248,250,252,0.96)',
-            }}
-          >
-            <Router
-              future={{
-                v7_startTransition: true,
-                v7_relativeSplatPath: true,
+          <NotificationProvider>
+            <Box
+              sx={{
+                minHeight: '100vh',
+                background:
+                  'radial-gradient(circle at top left, #1d4ed8 0, transparent 55%), radial-gradient(circle at bottom right, #f97316 0, transparent 55%), #020617',
+                color: 'rgba(248,250,252,0.96)',
               }}
             >
-              <Navbar />
-              <Box component="main" sx={{ py: 4 }}>
-                <Routes>
+              <Router
+                future={{
+                  v7_startTransition: true,
+                  v7_relativeSplatPath: true,
+                }}
+              >
+                <Navbar />
+                <Box component="main" sx={{ py: 4 }}>
+                  <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/register" element={<Register />} />
@@ -147,10 +149,11 @@ function App() {
                     }
                   />
                   <Route path="*" element={<Navigate to="/" replace />} />
-                </Routes>
-              </Box>
-            </Router>
-          </Box>
+                  </Routes>
+                </Box>
+              </Router>
+            </Box>
+          </NotificationProvider>
         </AuthProvider>
       </ThemeProvider>
     </StyledEngineProvider>

@@ -11,7 +11,9 @@
     "migrate": "sequelize-cli db:migrate",
     "migrate:undo": "sequelize-cli db:migrate:undo",
     "seed": "sequelize-cli db:seed:all",
-    "seed:admin": "node src/scripts/create-admin.js"
+    "db:seed:admin": "node src/scripts/createAdmin.js",
+    "db:seed:demo": "node src/scripts/seedDemoData.js",
+    "db:reset": "npm run migrate:undo && npm run migrate && npm run db:seed:demo"
   },
   "keywords": [
     "library",

@@ -91,3 +91,37 @@ jobs:
         run: |
           npm ci
           npm run build
+
+  deploy:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - name: Deploy to Render (Backend)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_BACKEND_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "Triggering backend deploy..."
+            curl -X POST "$RENDER_DEPLOY_HOOK"
+          else
+            echo "RENDER_BACKEND_DEPLOY_HOOK not set, skipping backend deploy"
+          fi
+
+      - name: Deploy to Render (Frontend)
+        env:
+          RENDER_DEPLOY_HOOK: ${{ secrets.RENDER_FRONTEND_DEPLOY_HOOK }}
+        run: |
+          if [ -n "$RENDER_DEPLOY_HOOK" ]; then
+            echo "Triggering frontend deploy..."
+            curl -X POST "$RENDER_DEPLOY_HOOK"
+          else
+            echo "RENDER_FRONTEND_DEPLOY_HOOK not set, skipping frontend deploy"
+          fi
+
+      - name: Deployment Summary
+        run: |
+          echo "✅ CI/CD Pipeline completed successfully!"
+          echo "📦 Backend and Frontend built and tested"
+          echo "🚀 Deploy triggered (if hooks configured)"

@@ -78,6 +78,7 @@ const Navbar = () => {
                 <Button
                   color="inherit"
                   onClick={handleLogout}
+                  data-testid="logout-button"
                   sx={{ borderRadius: 999, px: 2 }}
                 >
                   Шығу

@@ -106,18 +106,54 @@ docker-compose down
 
 ## Тестілеу
 
-### Backend тесттер
+### Backend тесттер (Unit + Integration)
 
 ```bash
 cd backend
 npm test
 ```
 
-### Frontend тесттер
+### Frontend тесттер (Unit)
 
 ```bash
 cd frontend
 npm test
+```
+
+### E2E тесттер (Playwright)
+
+**Орнату:**
+```bash
+cd e2e
+npm install
+npx playwright install
+```
+
+**Іске қосу:**
+```bash
+# Барлық тесттер
+npm test
+
+# UI режимде
+npm run test:ui
+
+# Браузерді көрсету
+npm run test:headed
+
+# Тек Chromium
+npx playwright test --project=chromium
+
+# Мобильді тест
+npx playwright test --project="Mobile Chrome"
+```
+
+**Ескерту:** E2E тесттер іске қосу үшін сервер іске қосылған болуы керек:
+```bash
+# Backend + Frontend іске қосу
+docker compose up -d
+# немесе
+npm run dev (backend)
+npm run dev (frontend)
 ```
 
 ## Өндіріс ортасына деплой

@@ -37,15 +37,77 @@
 VITE_API_URL=https://your-api.onrender.com/api npm run build
 ```
 
+## CI/CD Pipeline (GitHub Actions)
+
+GitHub репозиторийінде автоматты CI/CD орнатылған:
+
+```
+Push/PR → Test (Backend + Frontend) → Build → Deploy (main branch)
+```
+
+**Pipeline кадамдары:**
+1. **Backend тесттері** — Jest + PostgreSQL контейнері
+2. **Frontend тесттері** — Vitest + React Testing Library
+3. **Build** — Backend және Frontend жинау
+4. **Deploy** — Render.com-ға автоматты деплой (main branch бойынша)
+
+**GitHub Secrets орнату керек:**
+- `RENDER_BACKEND_DEPLOY_HOOK` — Backend deploy hook URL
+- `RENDER_FRONTEND_DEPLOY_HOOK` — Frontend deploy hook URL
+
 ## Мониторинг (Docker)
 
-Полный стек:
+### Prometheus + Grafana
 
 ```bash
 docker compose --profile monitoring up -d
 ```
 
-- Prometheus: http://localhost:9090  
-- Grafana: http://localhost:3002 (логин `admin` / `admin`, алдымен Prometheus data source қосыңыз: `http://prometheus:9090`)
+- **Prometheus**: http://localhost:9090
+- **Grafana**: http://localhost:3002 (логин `admin` / `admin`)
+- **Backend метрикалары**: `http://localhost:3000/metrics`
 
-Backend метрикалары: `http://localhost:3000/metrics`
+**Дайын Dashboard бар:** `LMS Application Dashboard`
+- CPU, Memory, Request Rate, Response Time
+- API metrics, Active Users, Books & Borrowings
+- Node.js heap usage, Event Loop Lag
+
+### ELK Stack (Elasticsearch + Logstash + Kibana)
+
+Логтарды жинау және талдау:
+
+```bash
+docker compose -f docker-compose.elk.yml up -d
+```
+
+- **Elasticsearch**: http://localhost:9200
+- **Kibana**: http://localhost:5601
+- **Лог файлдары**: `./backend/logs/*.log`
+
+**Логтар индексі**: `lms-logs-*`
+
+## Жүктемелік тестілеу (k6)
+
+**Smoke Test (тірі тексеру):**
+```bash
+k6 run load-tests/k6/smoke.js
+```
+
+**Stress Test (шекті жүктеме):**
+```bash
+k6 run load-tests/k6/stress.js
+```
+- 50 → 100 → 150 VU дейін жүктемені арттыру
+- 20 минут ішінде жүйенің шектерін анықтау
+
+**Spike Test (кенеттен өсу):**
+```bash
+k6 run load-tests/k6/spike.js
+```
+- 10 VU → 200 VU (30 секундта)
+- Жүйенің қалпына келу қабілетін тексеру
+
+**Docker арқылы іске қосу:**
+```bash
+docker run --rm -i --network host grafana/k6 run - <load-tests/k6/stress.js
+```
