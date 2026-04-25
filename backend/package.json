@@ -13,7 +13,8 @@
     "seed": "sequelize-cli db:seed:all",
     "db:seed:admin": "node src/scripts/createAdmin.js",
     "db:seed:demo": "node src/scripts/seedDemoData.js",
-    "db:reset": "npm run migrate:undo && npm run migrate && npm run db:seed:demo"
+    "db:reset": "npm run migrate:undo && npm run migrate && npm run db:seed:demo",
+    "db:reset:full": "node src/scripts/resetDatabase.js"
   },
   "keywords": [
     "library",

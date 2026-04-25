@@ -19,9 +19,19 @@ import {
   Skeleton,
   Chip,
   CardMedia,
+  IconButton,
+  Tabs,
+  Tab,
+  Rating,
+  Avatar,
+  Divider,
 } from '@mui/material';
+import FavoriteIcon from '@mui/icons-material/Favorite';
+import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
+import StarIcon from '@mui/icons-material/Star';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
+import BookReviews from '../components/BookReviews';
 
 const Books = () => {
   const { user } = useContext(AuthContext);
@@ -31,19 +41,76 @@ const Books = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [detailBook, setDetailBook] = useState(null);
+  const [detailTab, setDetailTab] = useState(0);
   const [borrowing, setBorrowing] = useState(false);
+  const [favorites, setFavorites] = useState(new Set());
+  const [togglingFavorite, setTogglingFavorite] = useState(null);
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     fetchBooks();
-  }, [page, search]);
+    fetchCategories();
+    if (user) {
+      fetchFavorites();
+    }
+  }, [page, search, selectedCategory]);
+
+  const fetchCategories = async () => {
+    try {
+      const response = await api.get('/categories');
+      setCategories(response.data.data.categories || []);
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    }
+  };
+
+  const fetchFavorites = async () => {
+    try {
+      const response = await api.get('/favorites', { params: { limit: 100 } });
+      const favoriteIds = response.data.data.favorites.map(b => b.id);
+      setFavorites(new Set(favoriteIds));
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (bookId) => {
+    if (!user) {
+      setSnackbar({ open: true, message: 'Сүйіктілерге қосу үшін кіріңіз', severity: 'warning' });
+      return;
+    }
+    try {
+      setTogglingFavorite(bookId);
+      if (favorites.has(bookId)) {
+        await api.delete(`/favorites/${bookId}`);
+        setFavorites(prev => {
+          const newSet = new Set(prev);
+          newSet.delete(bookId);
+          return newSet;
+        });
+        setSnackbar({ open: true, message: 'Сүйіктілерден жойылды', severity: 'success' });
+      } else {
+        await api.post('/favorites', { bookId });
+        setFavorites(prev => new Set(prev).add(bookId));
+        setSnackbar({ open: true, message: 'Сүйіктілерге қосылды', severity: 'success' });
+      }
+    } catch (error) {
+      setSnackbar({ open: true, message: 'Қате орын алды', severity: 'error' });
+    } finally {
+      setTogglingFavorite(null);
+    }
+  };
 
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/books', {
-        params: { page, limit: 12, search },
-      });
+      const params = { page, limit: 12, search };
+      if (selectedCategory) {
+        params.categoryId = selectedCategory;
+      }
+      const response = await api.get('/books', { params });
       setBooks(response.data.data.books);
       setTotalPages(response.data.data.pagination.totalPages);
     } catch (error) {
@@ -81,19 +148,39 @@ const Books = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Кітаптар
       </Typography>
-      <Box sx={{ mb: 3 }}>
-        <TextField
-          fullWidth
-          label="Іздеу"
-          data-testid="books-search"
-          value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            setPage(1);
-          }}
-          placeholder="Кітап атауы немесе ISBN бойынша іздеу"
-        />
-      </Box>
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={8}>
+          <TextField
+            fullWidth
+            label="Іздеу"
+            data-testid="books-search"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(1);
+            }}
+            placeholder="Кітап атауы немесе ISBN бойынша іздеу"
+          />
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <TextField
+            select
+            fullWidth
+            label="Категория"
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value);
+              setPage(1);
+            }}
+            SelectProps={{ native: true }}
+          >
+            <option value="">Барлық категориялар</option>
+            {categories.map((cat) => (
+              <option key={cat.id} value={cat.id}>{cat.name}</option>
+            ))}
+          </TextField>
+        </Grid>
+      </Grid>
       {loading ? (
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((i) => (
@@ -146,6 +233,15 @@ const Books = () => {
                         Кітап алу
                       </Button>
                     )}
+                    <Box sx={{ flexGrow: 1 }} />
+                    <IconButton
+                      size="small"
+                      color={favorites.has(book.id) ? 'error' : 'default'}
+                      onClick={() => toggleFavorite(book.id)}
+                      disabled={togglingFavorite === book.id}
+                    >
+                      {favorites.has(book.id) ? <FavoriteIcon /> : <FavoriteBorderIcon />}
+                    </IconButton>
                   </CardActions>
                 </Card>
               </Grid>
@@ -164,43 +260,74 @@ const Books = () => {
         </>
       )}
 
-      <Dialog open={!!detailBook} onClose={() => setDetailBook(null)} maxWidth="sm" fullWidth>
-        <DialogTitle>{detailBook?.title}</DialogTitle>
+      <Dialog open={!!detailBook} onClose={() => setDetailBook(null)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {detailBook?.title}
+            {detailBook?.category && (
+              <Chip label={detailBook.category.name} size="small" color="primary" />
+            )}
+          </Box>
+        </DialogTitle>
         <DialogContent>
           {detailBook && (
-            <Box sx={{ pt: 1 }}>
-              <Typography variant="body2" color="text.secondary">
-                ISBN: {detailBook.isbn}
-              </Typography>
-              {detailBook.authors && detailBook.authors.length > 0 && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Авторлар: {detailBook.authors.map(a => `${a.firstName} ${a.lastName}`).join(', ')}
-                </Typography>
+            <>
+              <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+                <Tabs value={detailTab} onChange={(_, v) => setDetailTab(v)}>
+                  <Tab label="Ақпарат" />
+                  <Tab label="Пікірлер" />
+                </Tabs>
+              </Box>
+              
+              {detailTab === 0 && (
+                <Box sx={{ pt: 1 }}>
+                  {detailBook.coverImage && (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+                      <img 
+                        src={detailBook.coverImage} 
+                        alt={detailBook.title}
+                        style={{ maxHeight: 200, borderRadius: 8 }}
+                      />
+                    </Box>
+                  )}
+                  <Typography variant="body2" color="text.secondary">
+                    ISBN: {detailBook.isbn}
+                  </Typography>
+                  {detailBook.authors && detailBook.authors.length > 0 && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Авторлар: {detailBook.authors.map(a => `${a.firstName} ${a.lastName}`).join(', ')}
+                    </Typography>
+                  )}
+                  {detailBook.description && (
+                    <Typography variant="body2" sx={{ mt: 2 }}>
+                      {detailBook.description}
+                    </Typography>
+                  )}
+                  {detailBook.publicationYear && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Шығарылым жылы: {detailBook.publicationYear}
+                    </Typography>
+                  )}
+                  {detailBook.publisher && (
+                    <Typography variant="body2" sx={{ mt: 1 }}>
+                      Баспа: {detailBook.publisher}
+                    </Typography>
+                  )}
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    Қолда бар: {detailBook.availableCopies} / {detailBook.totalCopies}
+                  </Typography>
+                </Box>
               )}
-              {detailBook.description && (
-                <Typography variant="body2" sx={{ mt: 2 }}>
-                  {detailBook.description}
-                </Typography>
+              
+              {detailTab === 1 && (
+                <BookReviews bookId={detailBook.id} />
               )}
-              {detailBook.publicationYear && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Шығарылым жылы: {detailBook.publicationYear}
-                </Typography>
-              )}
-              {detailBook.publisher && (
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Баспа: {detailBook.publisher}
-                </Typography>
-              )}
-              <Typography variant="body2" sx={{ mt: 1 }}>
-                Қолда бар: {detailBook.availableCopies} / {detailBook.totalCopies}
-              </Typography>
-            </Box>
+            </>
           )}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDetailBook(null)}>Жабу</Button>
-          {detailBook && user && detailBook.availableCopies > 0 && (
+          {detailBook && user && detailBook.availableCopies > 0 && detailTab === 0 && (
             <Button
               variant="contained"
               onClick={() => handleBorrow(detailBook)}

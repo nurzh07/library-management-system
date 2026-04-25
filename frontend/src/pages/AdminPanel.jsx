@@ -55,11 +55,13 @@ const AdminPanel = () => {
 
   const [authorDialog, setAuthorDialog] = useState({ open: false, mode: 'add', author: null });
   const [bookDialog, setBookDialog] = useState({ open: false, mode: 'add', book: null });
+  const [categoryDialog, setCategoryDialog] = useState({ open: false, mode: 'add', category: null });
   const [authorForm, setAuthorForm] = useState({ firstName: '', lastName: '', biography: '', nationality: '' });
   const [bookForm, setBookForm] = useState({
     title: '', isbn: '', description: '', publicationYear: '', publisher: '', totalCopies: 1,
     categoryId: '', authorIds: []
   });
+  const [categoryForm, setCategoryForm] = useState({ name: '', description: '' });
 
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
@@ -198,6 +200,45 @@ const AdminPanel = () => {
     }
   };
 
+  const openCategoryDialog = (mode, category = null) => {
+    if (mode === 'add') {
+      setCategoryForm({ name: '', description: '' });
+    } else {
+      setCategoryForm({
+        name: category.name,
+        description: category.description || '',
+      });
+    }
+    setCategoryDialog({ open: true, mode, category });
+  };
+
+  const handleSaveCategory = async () => {
+    try {
+      if (categoryDialog.mode === 'add') {
+        await api.post('/categories', categoryForm);
+        showSnackbar('Категория қосылды');
+      } else {
+        await api.put(`/categories/${categoryDialog.category.id}`, categoryForm);
+        showSnackbar('Категория жаңартылды');
+      }
+      setCategoryDialog({ open: false });
+      fetchCategories();
+    } catch (e) {
+      showSnackbar(e.response?.data?.message || 'Қате', 'error');
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Категорияны жоюды қалайсыз ба?')) return;
+    try {
+      await api.delete(`/categories/${id}`);
+      showSnackbar('Категория жойылды');
+      fetchCategories();
+    } catch (e) {
+      showSnackbar(e.response?.data?.message || 'Қате', 'error');
+    }
+  };
+
   const openBookDialog = (mode, book = null) => {
     if (mode === 'add') {
       setBookForm({
@@ -224,7 +265,9 @@ const AdminPanel = () => {
       const payload = {
         ...bookForm,
         categoryId: bookForm.categoryId || null,
-        authorIds: Array.isArray(bookForm.authorIds) ? bookForm.authorIds : []
+        authorIds: Array.isArray(bookForm.authorIds) ? bookForm.authorIds : [],
+        publicationYear: bookForm.publicationYear ? parseInt(bookForm.publicationYear) : null,
+        totalCopies: parseInt(bookForm.totalCopies) || 1
       };
       if (bookDialog.mode === 'add') {
         await api.post('/books', payload);
@@ -305,6 +348,7 @@ const AdminPanel = () => {
           <Tab label="Пайдаланушылар" />
           <Tab label="Кітаптар" />
           <Tab label="Авторлар" />
+          <Tab label="Категориялар" />
         </Tabs>
       </Box>
 
@@ -452,6 +496,56 @@ const AdminPanel = () => {
           )}
         </Box>
       )}
+
+      {tab === 3 && (
+        <Box>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6">Категорияларды басқару</Typography>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={() => openCategoryDialog('add')}>
+              Категория қосу
+            </Button>
+          </Box>
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>ID</TableCell>
+                  <TableCell>Атауы</TableCell>
+                  <TableCell>Сипаттама</TableCell>
+                  <TableCell align="right">Әрекет</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {categories.map((category) => (
+                  <TableRow key={category.id}>
+                    <TableCell>{category.id}</TableCell>
+                    <TableCell>{category.name}</TableCell>
+                    <TableCell>{category.description || '-'}</TableCell>
+                    <TableCell align="right">
+                      <IconButton size="small" onClick={() => openCategoryDialog('edit', category)}><EditIcon /></IconButton>
+                      <IconButton size="small" color="error" onClick={() => handleDeleteCategory(category.id)}><DeleteIcon /></IconButton>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
+      )}
+
+      <Dialog open={categoryDialog.open} onClose={() => setCategoryDialog({ open: false })} maxWidth="sm" fullWidth>
+        <DialogTitle>{categoryDialog.mode === 'add' ? 'Категория қосу' : 'Категорияны өңдеу'}</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
+            <TextField label="Атауы" value={categoryForm.name} onChange={(e) => setCategoryForm({ ...categoryForm, name: e.target.value })} required />
+            <TextField label="Сипаттама" value={categoryForm.description} onChange={(e) => setCategoryForm({ ...categoryForm, description: e.target.value })} multiline rows={3} />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setCategoryDialog({ open: false })}>Болдырмау</Button>
+          <Button variant="contained" onClick={handleSaveCategory}>Сақтау</Button>
+        </DialogActions>
+      </Dialog>
 
       <Dialog open={authorDialog.open} onClose={() => setAuthorDialog({ open: false })} maxWidth="sm" fullWidth>
         <DialogTitle>{authorDialog.mode === 'add' ? 'Автор қосу' : 'Авторды өңдеу'}</DialogTitle>

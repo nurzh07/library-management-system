@@ -221,6 +221,82 @@ exports.createBorrowing = async (req, res, next) => {
   }
 };
 
+// Продлить срок аренды книги
+exports.renewBorrowing = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { days = 7 } = req.body; // по умолчанию +7 дней
+
+    const borrowing = await Borrowing.findByPk(id, {
+      include: [
+        {
+          model: Book,
+          as: 'book'
+        }
+      ]
+    });
+
+    if (!borrowing) {
+      return res.status(404).json({
+        success: false,
+        message: 'Кітап табылмады'
+      });
+    }
+
+    if (borrowing.status === 'returned') {
+      return res.status(400).json({
+        success: false,
+        message: 'Кітап қойылған'
+      });
+    }
+
+    // Проверить права
+    if (req.user.role !== 'admin' && borrowing.userId !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Рұқсат жоқ'
+      });
+    }
+
+    // Нельзя продлить если уже просрочено
+    const now = new Date();
+    if (borrowing.dueDate < now) {
+      return res.status(400).json({
+        success: false,
+        message: 'Мерзімі өткен кітапты ұзарту мүмкін емес. Кітапханаға қайтарыңыз.'
+      });
+    }
+
+    // Максимум 2 продления
+    const renewalCount = borrowing.renewalCount || 0;
+    if (renewalCount >= 2) {
+      return res.status(400).json({
+        success: false,
+        message: 'Кітапты 2 реттен көп ұзартуға болмайды'
+      });
+    }
+
+    // Увеличить срок
+    const newDueDate = new Date(borrowing.dueDate);
+    newDueDate.setDate(newDueDate.getDate() + parseInt(days));
+
+    await borrowing.update({
+      dueDate: newDueDate,
+      renewalCount: renewalCount + 1
+    });
+
+    logger.info(`Borrowing renewed: ID ${id}, new due date: ${newDueDate}`);
+
+    res.json({
+      success: true,
+      message: `Кітап мерзімі ${days} күнге ұзартылды`,
+      data: { borrowing }
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 // Return a book
 exports.returnBook = async (req, res, next) => {
   try {

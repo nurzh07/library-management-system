@@ -1,11 +1,39 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Button, Box, Container } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, Container, Badge } from '@mui/material';
 import { AuthContext } from '../context/AuthContext';
+import { useThemeMode } from '../context/ThemeContext';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import NotificationsIcon from '@mui/icons-material/Notifications';
+import api from '../services/api';
 
 const Navbar = () => {
   const { user, logout } = useContext(AuthContext);
+  const { mode, toggleTheme } = useThemeMode();
   const navigate = useNavigate();
+  const [overdueCount, setOverdueCount] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetchOverdue();
+    }
+  }, [user]);
+
+  const fetchOverdue = async () => {
+    try {
+      const response = await api.get('/borrowings');
+      const borrowings = response.data.data.borrowings || [];
+      const overdue = borrowings.filter(b => {
+        if (b.status !== 'borrowed') return false;
+        const dueDate = new Date(b.dueDate);
+        return dueDate < new Date();
+      });
+      setOverdueCount(overdue.length);
+    } catch (error) {
+      console.error('Error fetching overdue:', error);
+    }
+  };
 
   const handleLogout = () => {
     logout();
@@ -64,8 +92,35 @@ const Navbar = () => {
             </Button>
             {user ? (
               <>
-                <Button color="inherit" component={Link} to="/borrowings">
+                <Button 
+                  color="inherit" 
+                  component={Link} 
+                  to="/borrowings"
+                  startIcon={
+                    overdueCount > 0 ? (
+                      <Badge badgeContent={overdueCount} color="error">
+                        <NotificationsIcon />
+                      </Badge>
+                    ) : null
+                  }
+                >
                   Менің кітаптарым
+                  {overdueCount > 0 && (
+                    <Box component="span" sx={{ 
+                      ml: 1, 
+                      px: 1, 
+                      py: 0.2, 
+                      bgcolor: 'error.main', 
+                      color: 'white', 
+                      borderRadius: 1,
+                      fontSize: '0.75rem'
+                    }}>
+                      {overdueCount} мерзімі өтті
+                    </Box>
+                  )}
+                </Button>
+                <Button color="inherit" component={Link} to="/favorites">
+                  Сүйіктілер
                 </Button>
                 {user.role === 'admin' && (
                   <Button color="inherit" component={Link} to="/admin">
@@ -79,9 +134,17 @@ const Navbar = () => {
                   color="inherit"
                   onClick={handleLogout}
                   data-testid="logout-button"
-                  sx={{ borderRadius: 999, px: 2 }}
+                  sx={{ ml: 1 }}
                 >
                   Шығу
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={toggleTheme}
+                  sx={{ ml: 1, minWidth: 40, p: 0.5 }}
+                >
+                  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
                 </Button>
               </>
             ) : (
@@ -99,6 +162,14 @@ const Navbar = () => {
                   }}
                 >
                   Тіркелу
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="inherit"
+                  onClick={toggleTheme}
+                  sx={{ ml: 1, minWidth: 40, p: 0.5 }}
+                >
+                  {mode === 'dark' ? <LightModeIcon /> : <DarkModeIcon />}
                 </Button>
               </>
             )}

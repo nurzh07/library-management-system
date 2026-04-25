@@ -11,10 +11,17 @@ const adminData = {
 
 async function createAdmin() {
   try {
-    // Алғаш бұрынғы admin болса өшіреміз
-    await User.destroy({ where: { email: adminData.email } });
+    // Алдымен бар админ бар ма тексереміз
+    const existingAdmin = await User.findOne({ where: { email: adminData.email } });
     
-    // Жаңа админ жасаймыз
+    if (existingAdmin) {
+      console.log('ℹ️  Админ аккаунт бұрыннан бар:');
+      console.log('📧 Email:    admin@library.kz');
+      console.log('🔑 Пароль:   Admin123!');
+      return;
+    }
+    
+    // Жоқ болса, жаңа админ жасаймыз
     const admin = await User.create(adminData);
     
     console.log('✅ Админ аккаунт сәтті жасалды!');
@@ -25,11 +32,14 @@ async function createAdmin() {
     console.log('');
     console.log('🔗 Кіру адресі: http://localhost:3001/login');
     
-    process.exit(0);
   } catch (error) {
     console.error('❌ Қате:', error.message);
-    process.exit(1);
   }
 }
 
-createAdmin();
+module.exports = { createAdmin };
+
+// Егер негізгі модуль ретінде іске қосылса
+if (require.main === module) {
+  createAdmin().then(() => process.exit(0));
+}

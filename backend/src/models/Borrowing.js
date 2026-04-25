@@ -47,6 +47,13 @@ const Borrowing = sequelize.define('Borrowing', {
     validate: {
       min: 0
     }
+  },
+  renewalCount: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+    validate: {
+      min: 0
+    }
   }
 }, {
   tableName: 'borrowings',

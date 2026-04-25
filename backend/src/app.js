@@ -28,6 +28,7 @@ if (
 const { sequelize } = require('./config/database');
 const logger = require('./utils/logger');
 const errorHandler = require('./middleware/errorHandler');
+const { createAdmin } = require('./scripts/createAdmin');
 
 // Routes
 const authRoutes = require('./routes/auth');
@@ -36,6 +37,8 @@ const authorRoutes = require('./routes/authors');
 const userRoutes = require('./routes/users');
 const borrowingRoutes = require('./routes/borrowings');
 const categoryRoutes = require('./routes/categories');
+const favoriteRoutes = require('./routes/favorites');
+const reviewRoutes = require('./routes/reviews');
 const adminRoutes = require('./routes/admin');
 const { router: metricsRouter } = require('./routes/metrics');
 
@@ -88,6 +91,8 @@ app.use('/api/authors', authorRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/borrowings', borrowingRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/favorites', favoriteRoutes);
+app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Error handling middleware (must be last)
@@ -107,8 +112,16 @@ sequelize
       return;
     }
     const alter = process.env.NODE_ENV !== 'production';
-    return sequelize.sync({ alter }).then(() => {
+    return sequelize.sync({ alter }).then(async () => {
       logger.info('Database synced successfully.');
+      
+      // Автоматты түрде админ жасау (егер жоқ болса)
+      try {
+        await createAdmin();
+        logger.info('Admin account checked/created.');
+      } catch (err) {
+        logger.error('Failed to create admin:', err.message);
+      }
     });
   })
   .catch((err) => {

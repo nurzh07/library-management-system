@@ -3,7 +3,7 @@ import axios from 'axios';
 // Dev: Vite /api прокси → CORS жоқ. Docker build: VITE_API_URL=/api. Production build: толық URL.
 const API_BASE =
   import.meta.env.VITE_API_URL ||
-  (import.meta.env.DEV ? '/api' : 'http://localhost:3000/api');
+  (import.meta.env.DEV ? '/api' : 'http://localhost:3002/api');
 
 const api = axios.create({
   baseURL: API_BASE,

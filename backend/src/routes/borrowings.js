@@ -5,7 +5,8 @@ const {
   getAllBorrowings,
   getBorrowingById,
   createBorrowing,
-  returnBook
+  returnBook,
+  renewBorrowing
 } = require('../controllers/borrowingController');
 
 const router = express.Router();
@@ -25,5 +26,6 @@ router.get('/', getAllBorrowings);
 router.get('/:id', getBorrowingById);
 router.post('/', createBorrowingValidation, createBorrowing);
 router.post('/:id/return', returnBook); // Return a book
+router.post('/:id/renew', renewBorrowing); // Renew borrowing
 
 module.exports = router;

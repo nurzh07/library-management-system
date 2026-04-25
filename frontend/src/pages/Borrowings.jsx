@@ -20,6 +20,7 @@ const Borrowings = () => {
   const [borrowings, setBorrowings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [returningId, setReturningId] = useState(null);
+  const [renewingId, setRenewingId] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
@@ -51,6 +52,19 @@ const Borrowings = () => {
     }
   };
 
+  const handleRenew = async (id) => {
+    try {
+      setRenewingId(id);
+      await api.post(`/borrowings/${id}/renew`);
+      setSnackbar({ open: true, message: 'Кітап мерзімі ұзартылды', severity: 'success' });
+      fetchBorrowings();
+    } catch (error) {
+      setSnackbar({ open: true, message: error.response?.data?.message || 'Қате', severity: 'error' });
+    } finally {
+      setRenewingId(null);
+    }
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'borrowed':
@@ -79,6 +93,7 @@ const Borrowings = () => {
                 <TableCell>Кітап</TableCell>
                 <TableCell>Алу күні</TableCell>
                 <TableCell>Қайтару күні</TableCell>
+                <TableCell>Ұзартулар</TableCell>
                 <TableCell>Мәртебе</TableCell>
                 <TableCell align="right">Әрекет</TableCell>
               </TableRow>
@@ -86,7 +101,7 @@ const Borrowings = () => {
             <TableBody>
               {borrowings.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} align="center">
+                  <TableCell colSpan={6} align="center">
                     Кітаптар жоқ. Кітаптар бетінен кітап алыңыз.
                   </TableCell>
                 </TableRow>
@@ -102,6 +117,7 @@ const Borrowings = () => {
                         ? new Date(borrowing.dueDate).toLocaleDateString()
                         : '-'}
                     </TableCell>
+                    <TableCell>{borrowing.renewalCount || 0} / 2</TableCell>
                     <TableCell>
                       <Chip
                         label={borrowing.status}
@@ -111,15 +127,29 @@ const Borrowings = () => {
                     </TableCell>
                     <TableCell align="right">
                       {borrowing.status === 'borrowed' && (
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          color="primary"
-                          onClick={() => handleReturn(borrowing.id)}
-                          disabled={returningId === borrowing.id}
-                        >
-                          Қайтару
-                        </Button>
+                        <>
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            color="primary"
+                            onClick={() => handleReturn(borrowing.id)}
+                            disabled={returningId === borrowing.id}
+                          >
+                            Қайтару
+                          </Button>
+                          {(borrowing.renewalCount || 0) < 2 && (
+                            <Button
+                              size="small"
+                              variant="outlined"
+                              color="secondary"
+                              onClick={() => handleRenew(borrowing.id)}
+                              disabled={renewingId === borrowing.id}
+                              sx={{ ml: 1 }}
+                            >
+                              Ұзарту
+                            </Button>
+                          )}
+                        </>
                       )}
                     </TableCell>
                   </TableRow>
