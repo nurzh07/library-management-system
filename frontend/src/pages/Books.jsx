@@ -25,10 +25,19 @@ import {
   Rating,
   Avatar,
   Divider,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Switch,
 } from '@mui/material';
 import FavoriteIcon from '@mui/icons-material/Favorite';
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder';
 import StarIcon from '@mui/icons-material/Star';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import api from '../services/api';
 import { AuthContext } from '../context/AuthContext';
 import BookReviews from '../components/BookReviews';
@@ -48,6 +57,12 @@ const Books = () => {
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [advancedFilters, setAdvancedFilters] = useState({
+    minYear: '',
+    maxYear: '',
+    availableOnly: false
+  });
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   useEffect(() => {
     fetchBooks();
@@ -55,7 +70,7 @@ const Books = () => {
     if (user) {
       fetchFavorites();
     }
-  }, [page, search, selectedCategory]);
+  }, [page, search, selectedCategory, advancedFilters]);
 
   const fetchCategories = async () => {
     try {
@@ -109,6 +124,15 @@ const Books = () => {
       const params = { page, limit: 12, search };
       if (selectedCategory) {
         params.categoryId = selectedCategory;
+      }
+      if (advancedFilters.minYear) {
+        params.minYear = advancedFilters.minYear;
+      }
+      if (advancedFilters.maxYear) {
+        params.maxYear = advancedFilters.maxYear;
+      }
+      if (advancedFilters.availableOnly) {
+        params.availableOnly = 'true';
       }
       const response = await api.get('/books', { params });
       setBooks(response.data.data.books);
@@ -181,6 +205,47 @@ const Books = () => {
           </TextField>
         </Grid>
       </Grid>
+
+      {/* Advanced Search Filters */}
+      <Accordion sx={{ mt: 2 }} expanded={showAdvanced} onChange={() => setShowAdvanced(!showAdvanced)}>
+        <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Typography>Кеңейтілген сүзгілеу</Typography>
+        </AccordionSummary>
+        <AccordionDetails>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Мин. жыл"
+                type="number"
+                value={advancedFilters.minYear}
+                onChange={(e) => setAdvancedFilters({ ...advancedFilters, minYear: e.target.value })}
+                placeholder="2020"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <TextField
+                fullWidth
+                label="Макс. жыл"
+                type="number"
+                value={advancedFilters.maxYear}
+                onChange={(e) => setAdvancedFilters({ ...advancedFilters, maxYear: e.target.value })}
+                placeholder="2024"
+              />
+            </Grid>
+            <Grid item xs={12} sm={4}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mt: 1 }}>
+                <Switch
+                  checked={advancedFilters.availableOnly}
+                  onChange={(e) => setAdvancedFilters({ ...advancedFilters, availableOnly: e.target.checked })}
+                />
+                <Typography>Тек қолда бар</Typography>
+              </Box>
+            </Grid>
+          </Grid>
+        </AccordionDetails>
+      </Accordion>
+
       {loading ? (
         <Grid container spacing={3}>
           {[1, 2, 3, 4, 5, 6].map((i) => (

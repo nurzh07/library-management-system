@@ -2,6 +2,7 @@ const { Op } = require('sequelize');
 const { validationResult } = require('express-validator');
 const { Book, Author, Category } = require('../models');
 const logger = require('../utils/logger');
+const { getBookCoverByISBN, getBookInfoByISBN } = require('../services/googleBooksService');
 
 // Get all books with pagination, search, and filtering
 exports.getAllBooks = async (req, res, next) => {
@@ -13,7 +14,11 @@ exports.getAllBooks = async (req, res, next) => {
       categoryId,
       authorId,
       sortBy = 'createdAt',
-      sortOrder = 'DESC'
+      sortOrder = 'DESC',
+      minYear,
+      maxYear,
+      availableOnly,
+      language
     } = req.query;
 
     const offset = (parseInt(page) - 1) * parseInt(limit);
@@ -30,6 +35,23 @@ exports.getAllBooks = async (req, res, next) => {
     // Filter by category
     if (categoryId) {
       where.categoryId = categoryId;
+    }
+
+    // Filter by publication year range
+    if (minYear || maxYear) {
+      where.publicationYear = {};
+      if (minYear) where.publicationYear[Op.gte] = parseInt(minYear);
+      if (maxYear) where.publicationYear[Op.lte] = parseInt(maxYear);
+    }
+
+    // Filter by availability
+    if (availableOnly === 'true') {
+      where.availableCopies = { [Op.gt]: 0 };
+    }
+
+    // Filter by language (if we add language field later)
+    if (language) {
+      where.language = language;
     }
 
     // Filter by author (through association)
@@ -147,16 +169,34 @@ exports.createBook = async (req, res, next) => {
       });
     }
 
+    // Если обложка не предоставлена, пытаемся получить из Google Books
+    let finalCoverImage = coverImage;
+    if (!finalCoverImage && isbn) {
+      const googleCover = await getBookCoverByISBN(isbn);
+      if (googleCover) {
+        finalCoverImage = googleCover;
+      }
+    }
+
+    // Если описание не предоставлено, пытаемся получить из Google Books
+    let finalDescription = description;
+    if (!finalDescription && isbn) {
+      const googleInfo = await getBookInfoByISBN(isbn);
+      if (googleInfo && googleInfo.description) {
+        finalDescription = googleInfo.description;
+      }
+    }
+
     const book = await Book.create({
       title,
       isbn,
-      description,
+      description: finalDescription,
       publicationYear,
       publisher,
       totalCopies: totalCopies || 1,
       availableCopies: totalCopies || 1,
       categoryId,
-      coverImage
+      coverImage: finalCoverImage
     });
 
     // Associate authors if provided

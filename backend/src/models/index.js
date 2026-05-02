@@ -6,6 +6,7 @@ const Category = require('./Category');
 const Borrowing = require('./Borrowing');
 const Favorite = require('./Favorite');
 const Review = require('./Review');
+const ReadingGoal = require('./ReadingGoal');
 
 // Define associations
 // Book - Author (Many-to-Many)
@@ -103,6 +104,17 @@ Review.belongsTo(Book, {
   as: 'book'
 });
 
+// User - ReadingGoal (One-to-Many)
+User.hasMany(ReadingGoal, {
+  foreignKey: 'userId',
+  as: 'readingGoals'
+});
+
+ReadingGoal.belongsTo(User, {
+  foreignKey: 'userId',
+  as: 'user'
+});
+
 module.exports = {
   sequelize,
   User,
@@ -111,5 +123,6 @@ module.exports = {
   Category,
   Borrowing,
   Favorite,
-  Review
+  Review,
+  ReadingGoal
 };

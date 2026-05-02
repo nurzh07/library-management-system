@@ -39,6 +39,7 @@ const borrowingRoutes = require('./routes/borrowings');
 const categoryRoutes = require('./routes/categories');
 const favoriteRoutes = require('./routes/favorites');
 const reviewRoutes = require('./routes/reviews');
+const readingGoalRoutes = require('./routes/readingGoals');
 const adminRoutes = require('./routes/admin');
 const { router: metricsRouter } = require('./routes/metrics');
 
@@ -93,6 +94,7 @@ app.use('/api/borrowings', borrowingRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/favorites', favoriteRoutes);
 app.use('/api/reviews', reviewRoutes);
+app.use('/api/reading', readingGoalRoutes);
 app.use('/api/admin', adminRoutes);
 
 // Error handling middleware (must be last)
